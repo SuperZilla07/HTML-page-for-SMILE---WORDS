@@ -1,0 +1,29 @@
+:root{--accent:#6b8cff;--bg:#f6f8fb;--card:#fff}
+*{box-sizing:border-box;font-family:Inter,system-ui,Arial,Helvetica,sans-serif}
+body{margin:0;background:var(--bg);color:#111}
+header{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:linear-gradient(90deg,#fff,#f7f9ff);border-bottom:1px solid #e6ecff}
+.badge{background:#ff6b6b;color:#fff;padding:3px 8px;border-radius:8px;font-size:12px;margin-left:8px}
+.panel{max-width:760px;margin:20px auto;padding:20px;background:var(--card);border-radius:8px;box-shadow:0 4px 18px rgba(20,30,60,0.06)}
+.hidden{display:none}
+.sidebar{width:260px;padding:16px;display:flex;flex-direction:column;gap:12px;background:transparent;border-right:1px solid #e9eefb}
+.messages-area{flex:1;padding:16px;display:flex;flex-direction:column}
+#app{display:flex;flex-direction:column;height:100vh}
+#chat{display:flex;flex:1;min-height:0}
+.message{background:#fff;border-radius:8px;padding:8px;margin-bottom:12px;box-shadow:0 2px 8px rgba(25,30,70,0.04)}
+.meta{font-size:12px;color:#536580;margin-bottom:6px}
+.molecule{width:240px;height:160px}
+.reveal{margin-top:8px}
+#messages{overflow:auto;padding:12px 0}
+#send-form{display:flex;gap:8px;padding-top:8px}
+#send-form input{flex:1;padding:8px;border-radius:6px;border:1px solid #dde7ff}
+#send-form button{background:var(--accent);color:#fff;padding:8px 12px;border:none;border-radius:6px}
+.sidebar .room.active{background:var(--accent);color:#fff}
+.contacts{margin-top:12px}
+.user-item{display:flex;justify-content:space-between;padding:6px 0}
+footer{padding:12px 20px;text-align:center;font-size:12px;color:#667}
+
+@media(min-width:800px){
+  #app{flex-direction:column}
+  #chat{display:flex}
+  .sidebar{display:flex}
+}
