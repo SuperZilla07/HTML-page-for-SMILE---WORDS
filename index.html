@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>SMILE Chat — Beta</title>
+    <link rel="stylesheet" href="styles.css" />
+    <meta name="description" content="Chat using SMILES rendered as molecules. Tap to decode." />
+  </head>
+  <body>
+    <main id="app">
+      <header>
+        <h1>SMILE Chat <span class="badge">BETA</span></h1>
+        <div id="auth-area"></div>
+      </header>
+
+      <section id="landing">
+        <div class="panel">
+          <h2>Try it now</h2>
+          <p>Demo: click <button id="demo-signin">Demo Sign-in</button> to join anonymously.</p>
+          <p class="demo-creds">Demo email/password (replace with your Firebase): demo@example.com / demopass</p>
+        </div>
+      </section>
+
+      <section id="chat" class="hidden">
+        <aside class="sidebar">
+          <div class="me" id="me-info"></div>
+          <div class="rooms">
+            <button id="global-room" class="room active">Global Chat</button>
+          </div>
+          <div class="contacts">
+            <h3>People</h3>
+            <div id="users-list"></div>
+            <input id="add-user-input" placeholder="Enter UID or email to add" />
+            <button id="add-user-btn">Add / Start 1-on-1</button>
+          </div>
+          <button id="signout">Sign out</button>
+        </aside>
+
+        <section class="messages-area">
+          <div id="room-title">Global</div>
+          <div id="messages"></div>
+          <form id="send-form">
+            <input id="message-input" placeholder="Type a message..." autocomplete="off" />
+            <button type="submit">Send</button>
+          </form>
+        </section>
+      </section>
+
+      <footer>
+        <small>Prepared for Vercel. Configure Firebase in <strong>app.js</strong>.</small>
+      </footer>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/smiles-drawer@2.0.1/dist/smiles-drawer.min.js"></script>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
