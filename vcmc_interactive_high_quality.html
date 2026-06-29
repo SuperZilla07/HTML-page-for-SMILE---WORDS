@@ -1,0 +1,939 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VCMC Molecular Cipher - High Quality Structures</title>
+  <style>
+    :root {
+      --void: #07070f;
+      --surface: #0d0e1c;
+      --surface2: #12132a;
+      --surface3: #171933;
+      --border: rgba(255,255,255,0.08);
+      --cyan: #00e5ff;
+      --blue: #4a7eff;
+      --pink: #ff6b9d;
+      --green: #00ffb3;
+      --amber: #ffb347;
+      --purple: #b06bff;
+      --white: #e9e9f7;
+      --muted: #8d8db7;
+      --dim: #5f6187;
+      --bad: #ff6b9d;
+      --good: #00ffb3;
+      --mono: Consolas, "SFMono-Regular", "Roboto Mono", monospace;
+      --body: Inter, "Segoe UI", Arial, Helvetica, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse 70% 45% at 50% -10%, rgba(0,229,255,0.14) 0%, transparent 58%),
+        radial-gradient(ellipse 45% 35% at 100% 0%, rgba(255,107,157,0.10) 0%, transparent 52%),
+        radial-gradient(ellipse 50% 40% at 0% 100%, rgba(176,107,255,0.10) 0%, transparent 55%),
+        var(--void);
+      color: var(--white);
+      font-family: var(--body);
+      letter-spacing: 0;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 30px 30px;
+      pointer-events: none;
+    }
+
+    header {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 34px 24px 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: var(--mono);
+      font-size: clamp(34px, 7vw, 68px);
+      line-height: 0.95;
+      letter-spacing: 0;
+      background: linear-gradient(135deg, var(--cyan) 0%, var(--blue) 35%, var(--pink) 72%, var(--amber) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      max-width: 760px;
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .badge {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 12px;
+      background: rgba(255,255,255,0.035);
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .badge.cyan { color: var(--cyan); border-color: rgba(0,229,255,.25); background: rgba(0,229,255,.06); }
+    .badge.purple { color: var(--purple); border-color: rgba(176,107,255,.25); background: rgba(176,107,255,.06); }
+    .badge.amber { color: var(--amber); border-color: rgba(255,179,71,.25); background: rgba(255,179,71,.06); }
+
+    .vibgyor-bar {
+      height: 3px;
+      max-width: 1280px;
+      margin: 18px auto 0;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #8b5cf6, #4a7eff, #00e5ff, #00ffb3, #ffea75, #ffb347, #ff6b9d);
+      opacity: .75;
+    }
+
+    main {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 20px 24px 42px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 18px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab {
+      border: 1px solid var(--border);
+      border-bottom: 0;
+      background: rgba(255,255,255,0.035);
+      color: var(--muted);
+      min-height: 40px;
+      min-width: 120px;
+      padding: 9px 16px;
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: .04em;
+      border-radius: 10px 10px 0 0;
+    }
+
+    .tab.active {
+      background: var(--surface2);
+      color: var(--cyan);
+      font-weight: 700;
+      box-shadow: inset 0 2px 0 var(--cyan);
+    }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .input-pane,
+    .output-pane,
+    .decode-result {
+      background: linear-gradient(180deg, rgba(18,19,42,.96), rgba(13,14,28,.96));
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.22);
+      overflow: hidden;
+    }
+
+    .input-pane {
+      padding: 16px;
+      position: sticky;
+      top: 16px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--cyan);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 170px;
+      resize: vertical;
+      border: 1px solid rgba(0,229,255,.16);
+      border-radius: 10px;
+      padding: 12px;
+      font: 15px/1.5 var(--body);
+      color: var(--white);
+      background: #050611;
+    }
+
+    textarea:focus {
+      outline: 2px solid rgba(0,229,255,.35);
+      outline-offset: 1px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    button.primary,
+    button.secondary {
+      min-height: 38px;
+      border-radius: 9px;
+      padding: 8px 14px;
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: .04em;
+    }
+
+    button.primary {
+      border: 1px solid rgba(0,229,255,.42);
+      background: linear-gradient(135deg, rgba(0,229,255,.22), rgba(74,126,255,.28));
+      color: var(--cyan);
+    }
+
+    button.primary:hover { background: linear-gradient(135deg, rgba(0,229,255,.32), rgba(74,126,255,.38)); }
+
+    button.secondary {
+      border: 1px solid rgba(255,107,157,.28);
+      background: rgba(255,107,157,.06);
+      color: var(--pink);
+    }
+
+    .status {
+      min-height: 20px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .status.good { color: var(--good); }
+    .status.bad { color: var(--bad); }
+
+    .sentence-strip {
+      display: flex;
+      gap: 12px;
+      min-height: 280px;
+      overflow-x: auto;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      align-items: stretch;
+    }
+
+    .word-card {
+      min-width: 250px;
+      max-width: 270px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #090a18;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 12px 30px rgba(0,0,0,.22);
+    }
+
+    .mol-box {
+      height: 205px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 30% 12%, rgba(0,229,255,.08), transparent 42%),
+        radial-gradient(circle at 88% 82%, rgba(255,107,157,.07), transparent 36%),
+        #050611;
+    }
+
+    .mol-frame {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .chem-render {
+      width: 122%;
+      height: 122%;
+      max-width: none;
+      max-height: none;
+      padding: 0;
+      object-fit: contain;
+      image-rendering: auto;
+      filter: contrast(1.04);
+      background: #fff;
+    }
+
+    .fallback-structure {
+      display: none;
+      width: 100%;
+      height: 100%;
+      background: #050611;
+    }
+
+    .render-tag {
+      position: absolute;
+      right: 8px;
+      bottom: 7px;
+      z-index: 2;
+      border: 1px solid rgba(0,229,255,.24);
+      border-radius: 999px;
+      padding: 3px 7px;
+      background: rgba(5,6,17,.72);
+      color: var(--cyan);
+      font-family: var(--mono);
+      font-size: 8px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .word-meta { padding: 10px; }
+
+    .word-label {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      word-break: break-word;
+      color: var(--white);
+      font-family: var(--mono);
+    }
+
+    .smiles {
+      display: block;
+      border: 1px solid rgba(0,229,255,.14);
+      border-radius: 8px;
+      background: rgba(0,229,255,.045);
+      padding: 6px;
+      color: var(--cyan);
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.35;
+      word-break: break-all;
+    }
+
+    .details { padding: 16px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      background: transparent;
+      color: var(--white);
+    }
+
+    th,
+    td {
+      border: 1px solid var(--border);
+      padding: 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: rgba(255,255,255,0.045);
+      color: var(--cyan);
+      font-weight: 700;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    .decode-layout {
+      display: grid;
+      grid-template-columns: minmax(280px, 420px) 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .decode-result {
+      min-height: 300px;
+      padding: 16px;
+    }
+
+    .decoder-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 400px) 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .large-mol {
+      height: 340px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(circle at 20% 18%, rgba(176,107,255,.10), transparent 42%),
+        radial-gradient(circle at 86% 78%, rgba(0,255,179,.08), transparent 36%),
+        #050611;
+      overflow: hidden;
+    }
+
+    .large-mol .mol-frame {
+      width: calc(100% - 18px);
+      height: calc(100% - 18px);
+    }
+
+    .large-mol .chem-render {
+      width: 114%;
+      height: 114%;
+    }
+
+    .decoded-word {
+      margin: 0 0 12px;
+      font-size: 28px;
+      font-weight: 700;
+      font-family: var(--mono);
+      color: var(--green);
+    }
+
+    .empty {
+      padding: 32px 16px;
+      color: var(--muted);
+      text-align: center;
+      width: 100%;
+    }
+
+    svg text {
+      font-family: var(--mono);
+      letter-spacing: 0;
+    }
+
+    @media (max-width: 850px) {
+      main { padding: 14px; }
+      .workspace,
+      .decode-layout,
+      .decoder-grid { grid-template-columns: 1fr; }
+      .input-pane { position: static; }
+      .sentence-strip { min-height: 245px; }
+      .word-card { min-width: 225px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>VCMC Molecular Cipher</h1>
+    <p class="subtitle">Encode words into reversible VCMC SMILES and inspect each generated molecular cipher unit with cleaner 2D chemical depictions. Display structures use implicit hydrogens for a cleaner ChemSketch-style view; the original VCMC SMILES remains unchanged.</p>
+    <div class="badges" aria-label="tool badges">
+      <span class="badge cyan">Encoder</span>
+      <span class="badge purple">Decoder</span>
+      <span class="badge amber">2D Render + Fallback</span>
+    </div>
+  </header>
+  <div class="vibgyor-bar" aria-hidden="true"></div>
+
+  <main>
+    <nav class="tabs" aria-label="VCMC tools">
+      <button class="tab active" data-page="encode-page">Encoder</button>
+      <button class="tab" data-page="decode-page">Decoder</button>
+    </nav>
+
+    <section id="encode-page" class="page active">
+      <div class="workspace">
+        <aside class="input-pane">
+          <label for="encode-input">Words or sentence</label>
+          <textarea id="encode-input" spellcheck="false">the pain will go away</textarea>
+          <div class="actions">
+            <button class="primary" id="encode-button">Encode</button>
+            <button class="secondary" id="clear-encoder">Clear</button>
+          </div>
+          <div id="encode-status" class="status">Ready. The displayed molecule uses implicit hydrogens for clarity; the VCMC SMILES below remains exact.</div>
+        </aside>
+
+        <section class="output-pane">
+          <div id="sentence-output" class="sentence-strip">
+            <div class="empty">No molecules yet.</div>
+          </div>
+          <div class="details">
+            <table id="encode-table">
+              <thead>
+                <tr>
+                  <th>Word</th>
+                  <th>Structure</th>
+                  <th>VCMC SMILES</th>
+                  <th>Letter tags</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section id="decode-page" class="page">
+      <div class="decode-layout">
+        <aside class="input-pane">
+          <label for="decode-input">VCMC SMILES</label>
+          <textarea id="decode-input" spellcheck="false">[C@H]1[C@H](CC)N[C@@H](O)[C@@H](O)1</textarea>
+          <div class="actions">
+            <button class="primary" id="decode-button">Decode</button>
+            <button class="secondary" id="clear-decoder">Clear</button>
+          </div>
+          <div id="decode-status" class="status">Ready. Paste a VCMC SMILES string.</div>
+        </aside>
+
+        <section class="decode-result">
+          <div id="decode-output">
+            <div class="empty">No decoded molecule yet.</div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const LETTER_MAP = {
+      A: "N",
+      E: "O",
+      I: "N(C)",
+      O: "S",
+      U: "C(=O)",
+      B: "[C@@H]",
+      C: "[C@H]",
+      D: "[C@@H](F)",
+      F: "[C@H](F)",
+      G: "[C@@H](Cl)",
+      H: "[C@H](Cl)",
+      J: "[C@@H](Br)",
+      K: "[C@H](Br)",
+      L: "[C@@H](O)",
+      M: "[C@H](O)",
+      V: "[C@@H](S)",
+      W: "[C@H](S)",
+      N: "[C@@H](N)",
+      P: "[C@H](N)",
+      Q: "[C@@H](C)",
+      R: "[C@H](C)",
+      S: "[C@@H](CC)",
+      T: "[C@H](CC)",
+      X: "[C@@H](C#N)",
+      Y: "[C@H](C#N)",
+      Z: "[C@@H](I)"
+    };
+
+    const VOWELS = new Set(["A", "E", "I", "O", "U"]);
+    const REVERSE_MAP = {};
+    Object.keys(LETTER_MAP).forEach((letter) => {
+      REVERSE_MAP[LETTER_MAP[letter]] = letter;
+    });
+
+    const TOKEN_ORDER = [
+      "[C@@H](C#N)", "[C@H](C#N)",
+      "[C@@H](CC)", "[C@H](CC)",
+      "[C@@H](Cl)", "[C@H](Cl)",
+      "[C@@H](Br)", "[C@H](Br)",
+      "[C@@H](F)", "[C@H](F)",
+      "[C@@H](O)", "[C@H](O)",
+      "[C@@H](S)", "[C@H](S)",
+      "[C@@H](N)", "[C@H](N)",
+      "[C@@H](C)", "[C@H](C)",
+      "[C@@H](I)", "[C@H](I)",
+      "[C@@H]", "[C@H]",
+      "N(C)", "C(=O)",
+      "N", "O", "S"
+    ];
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function setStatus(id, text, kind) {
+      const el = document.getElementById(id);
+      el.textContent = text;
+      el.className = "status" + (kind ? " " + kind : "");
+    }
+
+    function wordsFromInput(text) {
+      return text
+        .split(/\s+/)
+        .map((word) => word.replace(/[^A-Za-z]/g, "").toUpperCase())
+        .filter(Boolean);
+    }
+
+    function encodeWord(word) {
+      const letters = Array.from(word).filter((letter) => LETTER_MAP[letter]);
+      if (!letters.length) return null;
+      const tokens = letters.map((letter) => LETTER_MAP[letter]);
+      const ring = letters.length >= 5;
+      const smiles = tokens[0] + (ring ? "1" : "") + tokens.slice(1).join("") + (ring ? "1" : "");
+      const rows = letters.map((letter, index) => ({
+        letter,
+        token: tokens[index],
+        conf: VOWELS.has(letter) ? "-" : tokens[index].includes("@@") ? "R" : "S",
+        role: VOWELS.has(letter) ? "vowel to heteroatom" : "consonant to chiral carbon"
+      }));
+      return { word, letters, tokens, ring, smiles, rows };
+    }
+
+    function normalizeForDecode(smiles) {
+      return smiles.trim().replace(/([A-Za-z\]])\d/g, "$1");
+    }
+
+    function tokenizeSmiles(smiles) {
+      const raw = normalizeForDecode(smiles);
+      const tokens = [];
+      let i = 0;
+      while (i < raw.length) {
+        let matched = "";
+        for (const token of TOKEN_ORDER) {
+          if (raw.startsWith(token, i)) {
+            matched = token;
+            break;
+          }
+        }
+        if (matched) {
+          tokens.push(matched);
+          i += matched.length;
+        } else {
+          i += 1;
+        }
+      }
+      return tokens;
+    }
+
+    function decodeSmiles(smiles) {
+      const tokens = tokenizeSmiles(smiles);
+      const letters = tokens.map((token) => REVERSE_MAP[token]).filter(Boolean);
+      const rows = tokens.map((token) => {
+        const letter = REVERSE_MAP[token] || "?";
+        return {
+          token,
+          letter,
+          role: letter === "?" ? "unrecognised" : VOWELS.has(letter) ? "vowel to heteroatom" : "consonant to chiral carbon"
+        };
+      });
+      return { tokens, letters, word: letters.join(""), rows };
+    }
+
+    function atomInfo(token) {
+      if (token === "N") return { atom: "N", sub: "", stereo: "" };
+      if (token === "O") return { atom: "O", sub: "", stereo: "" };
+      if (token === "S") return { atom: "S", sub: "", stereo: "" };
+      if (token === "N(C)") return { atom: "N", sub: "CH3", stereo: "" };
+      if (token === "C(=O)") return { atom: "C", sub: "O", stereo: "carbonyl" };
+
+      let sub = "";
+      if (token.includes("(F)")) sub = "F";
+      else if (token.includes("(Cl)")) sub = "Cl";
+      else if (token.includes("(Br)")) sub = "Br";
+      else if (token.includes("(O)")) sub = "OH";
+      else if (token.includes("(S)")) sub = "SH";
+      else if (token.includes("(N)")) sub = "NH2";
+      else if (token.includes("(CC)")) sub = "CH2CH3";
+      else if (token.includes("(C#N)")) sub = "C\u2261N";
+      else if (token.includes("(C)")) sub = "CH3";
+      else if (token.includes("(I)")) sub = "I";
+
+      return {
+        atom: "C",
+        sub,
+        stereo: token.includes("@@") ? "dash" : token.includes("@") ? "wedge" : ""
+      };
+    }
+
+    function pointsForMolecule(tokens, ring, width, height) {
+      const n = tokens.length;
+      if (ring) {
+        const cx = width / 2;
+        const cy = height / 2 + 2;
+        const radius = Math.min(width, height) * 0.22;
+        return tokens.map((_, i) => {
+          const angle = -Math.PI / 2 + (2 * Math.PI * i / n);
+          return {
+            x: cx + radius * Math.cos(angle),
+            y: cy + radius * Math.sin(angle),
+            ox: Math.cos(angle),
+            oy: Math.sin(angle)
+          };
+        });
+      }
+
+      const step = n <= 1 ? 0 : Math.min(50, (width - 52) / (n - 1));
+      const startX = width / 2 - step * (n - 1) / 2;
+      const cy = height / 2;
+      return tokens.map((_, i) => {
+        const yOffset = i % 2 === 0 ? -18 : 18;
+        const ox = 0;
+        const oy = i % 2 === 0 ? -1 : 1;
+        return {
+          x: startX + i * step,
+          y: cy + yOffset,
+          ox,
+          oy
+        };
+      });
+    }
+
+    function line(x1, y1, x2, y2, attrs) {
+      return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" ${attrs} />`;
+    }
+
+    function text(x, y, value, size, extra) {
+      return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" font-size="${size}" ${extra || ""}>${escapeHtml(value)}</text>`;
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function drawStructure(tokens, ring, width, height) {
+      if (!tokens.length) {
+        return `<svg viewBox="0 0 ${width} ${height}" width="100%" height="100%">${text(width / 2, height / 2, "No VCMC tokens", 14, 'fill="#8d8db7"')}</svg>`;
+      }
+
+      const pts = pointsForMolecule(tokens, ring, width, height);
+      let svg = `<svg viewBox="0 0 ${width} ${height}" width="100%" height="100%" role="img" aria-label="VCMC molecule">`;
+      svg += `<rect x="0" y="0" width="${width}" height="${height}" fill="#050611"></rect>`;
+
+      for (let i = 0; i < pts.length - 1; i++) {
+        svg += line(pts[i].x, pts[i].y, pts[i + 1].x, pts[i + 1].y, 'stroke="#dfe5ff" stroke-width="2" stroke-linecap="round"');
+      }
+      if (ring && pts.length > 2) {
+        svg += line(pts[pts.length - 1].x, pts[pts.length - 1].y, pts[0].x, pts[0].y, 'stroke="#dfe5ff" stroke-width="2" stroke-linecap="round"');
+      }
+
+      tokens.forEach((token, i) => {
+        const p = pts[i];
+        const info = atomInfo(token);
+        const isHetero = info.atom !== "C";
+        const atomColor = info.atom === "N" ? "#00e5ff" : info.atom === "O" ? "#ff6b9d" : info.atom === "S" ? "#ffb347" : "#e9e9f7";
+        svg += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${isHetero ? 13 : 8}" fill="${isHetero ? "rgba(5,6,17,.95)" : atomColor}" stroke="${atomColor}" stroke-width="${isHetero ? 1.8 : 0}"></circle>`;
+        if (isHetero) {
+          svg += text(p.x, p.y, info.atom, 16, `font-weight="700" fill="${atomColor}"`);
+        }
+
+        if (info.sub) {
+          const branchLen = info.sub.length > 4 ? 44 : 34;
+          const sx = p.x + p.ox * 13;
+          const sy = p.y + p.oy * 13;
+          const ex = p.x + p.ox * branchLen;
+          const ey = p.y + p.oy * branchLen;
+          let attrs = 'stroke="#dfe5ff" stroke-width="2" stroke-linecap="round"';
+          if (info.stereo === "dash") attrs += ' stroke-dasharray="4 4"';
+          if (info.stereo === "wedge") attrs = 'stroke="#b06bff" stroke-width="4" stroke-linecap="round"';
+          if (info.stereo === "carbonyl") {
+            const ox = p.oy * 3;
+            const oy = -p.ox * 3;
+            svg += line(sx - ox, sy - oy, ex - ox, ey - oy, 'stroke="#ff6b9d" stroke-width="1.6" stroke-linecap="round"');
+            svg += line(sx + ox, sy + oy, ex + ox, ey + oy, 'stroke="#ff6b9d" stroke-width="1.6" stroke-linecap="round"');
+          } else {
+            svg += line(sx, sy, ex, ey, attrs);
+          }
+          const labelSize = info.sub.length > 4 ? 12 : 14;
+          const labelX = clamp(ex + p.ox * 16, 22, width - 22);
+          const labelY = clamp(ey + p.oy * 16, 18, height - 18);
+          svg += text(labelX, labelY, info.sub, labelSize, 'font-weight="700" fill="#00ffb3"');
+        }
+      });
+
+      svg += `</svg>`;
+      return svg;
+    }
+
+    function cactusImageUrl(smiles) {
+      return `https://cactus.nci.nih.gov/chemical/structure/${encodeURIComponent(smiles)}/image`;
+    }
+
+    function pubChemImageUrl(smiles) {
+      return `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/${encodeURIComponent(smiles)}/PNG?image_size=large`;
+    }
+
+    function displaySmilesForRendering(smiles) {
+      return smiles
+        .replace(/\[C@@H\]/g, "C")
+        .replace(/\[C@H\]/g, "C");
+    }
+
+    function handleChemImageError(img) {
+      const tag = img.parentElement.querySelector(".render-tag");
+      if (!img.dataset.triedCactus) {
+        img.dataset.triedCactus = "1";
+        img.src = img.dataset.cactusSrc;
+        if (tag) tag.textContent = "cactus 2D";
+        return;
+      }
+
+      img.style.display = "none";
+      img.nextElementSibling.style.display = "block";
+      if (tag) tag.textContent = "local svg";
+    }
+
+    function drawDisplayStructure(item, width, height) {
+      const fallback = drawStructure(item.tokens, item.ring, width, height);
+      const displaySmiles = displaySmilesForRendering(item.smiles);
+      const pubChemUrl = pubChemImageUrl(displaySmiles);
+      const cactusUrl = cactusImageUrl(displaySmiles);
+      return `
+        <div class="mol-frame">
+          <img class="chem-render"
+               src="${escapeHtml(pubChemUrl)}"
+               data-cactus-src="${escapeHtml(cactusUrl)}"
+               alt="2D chemical structure for ${escapeHtml(item.word || item.smiles)}"
+               loading="lazy"
+               onerror="handleChemImageError(this);">
+          <div class="fallback-structure">${fallback}</div>
+          <span class="render-tag" title="Rendered from an implicit-hydrogen display SMILES: ${escapeHtml(displaySmiles)}">pubchem 2D</span>
+        </div>
+      `;
+    }
+
+    function renderEncoder() {
+      const words = wordsFromInput(document.getElementById("encode-input").value);
+      const output = document.getElementById("sentence-output");
+      const tbody = document.querySelector("#encode-table tbody");
+      output.innerHTML = "";
+      tbody.innerHTML = "";
+
+      if (!words.length) {
+        output.innerHTML = '<div class="empty">No words found.</div>';
+        setStatus("encode-status", "Enter at least one alphabetic word.", "bad");
+        return;
+      }
+
+      const encoded = words.map(encodeWord).filter(Boolean);
+      encoded.forEach((item) => {
+        const card = document.createElement("article");
+        card.className = "word-card";
+        card.innerHTML = `
+          <div class="mol-box">${drawDisplayStructure(item, 240, 190)}</div>
+          <div class="word-meta">
+            <div class="word-label">${escapeHtml(item.word)}</div>
+            <span class="smiles">${escapeHtml(item.smiles)}</span>
+          </div>
+        `;
+        output.appendChild(card);
+
+        const tagText = item.rows.map((row) => `${row.letter}: ${row.token} (${row.conf})`).join("; ");
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${escapeHtml(item.word)}</td>
+          <td>${item.ring ? "ring" : "open chain"}</td>
+          <td><span class="smiles">${escapeHtml(item.smiles)}</span></td>
+          <td>${escapeHtml(tagText)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      setStatus("encode-status", `${encoded.length} molecule${encoded.length === 1 ? "" : "s"} generated.`, "good");
+    }
+
+    function renderDecoder() {
+      const smiles = document.getElementById("decode-input").value.trim();
+      const output = document.getElementById("decode-output");
+      output.innerHTML = "";
+
+      if (!smiles) {
+        output.innerHTML = '<div class="empty">Paste a VCMC SMILES string.</div>';
+        setStatus("decode-status", "No SMILES entered.", "bad");
+        return;
+      }
+
+      const decoded = decodeSmiles(smiles);
+      const ring = /\d/.test(smiles);
+      const rows = decoded.rows.map((row) => `
+        <tr>
+          <td>${escapeHtml(row.token)}</td>
+          <td>${escapeHtml(row.letter)}</td>
+          <td>${escapeHtml(row.role)}</td>
+        </tr>
+      `).join("");
+
+      output.innerHTML = `
+        <div class="decoder-grid">
+          <div class="large-mol">${drawDisplayStructure({ word: decoded.word, smiles, tokens: decoded.tokens, ring }, 380, 315)}</div>
+          <div>
+            <p class="decoded-word">${escapeHtml(decoded.word || "No word decoded")}</p>
+            <span class="smiles">${escapeHtml(smiles)}</span>
+            <table style="margin-top: 12px;">
+              <thead>
+                <tr>
+                  <th>Atom tag</th>
+                  <th>Letter</th>
+                  <th>Role</th>
+                </tr>
+              </thead>
+              <tbody>${rows || '<tr><td colspan="3">No VCMC tags found.</td></tr>'}</tbody>
+            </table>
+          </div>
+        </div>
+      `;
+
+      setStatus("decode-status", decoded.word ? "Decoded." : "No VCMC tokens were recognised.", decoded.word ? "good" : "bad");
+    }
+
+    function switchPage(pageId) {
+      document.querySelectorAll(".tab").forEach((tab) => {
+        tab.classList.toggle("active", tab.dataset.page === pageId);
+      });
+      document.querySelectorAll(".page").forEach((page) => {
+        page.classList.toggle("active", page.id === pageId);
+      });
+    }
+
+    document.querySelectorAll(".tab").forEach((tab) => {
+      tab.addEventListener("click", () => switchPage(tab.dataset.page));
+    });
+
+    document.getElementById("encode-button").addEventListener("click", renderEncoder);
+    document.getElementById("decode-button").addEventListener("click", renderDecoder);
+    document.getElementById("clear-encoder").addEventListener("click", () => {
+      document.getElementById("encode-input").value = "";
+      renderEncoder();
+    });
+    document.getElementById("clear-decoder").addEventListener("click", () => {
+      document.getElementById("decode-input").value = "";
+      renderDecoder();
+    });
+
+    renderEncoder();
+  </script>
+</body>
+</html>
