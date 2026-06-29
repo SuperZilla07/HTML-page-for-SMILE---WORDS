@@ -1,17 +1,58 @@
-# SMILE Chat — Minimal front-end
+# VCMC Molecular Chat
 
-This repo contains a minimal single-page frontend implementing the requested architecture: landing page + demo badge, Google/email/anonymous auth via Firebase, a global chatroom and private 1-on-1 rooms, messages mapped to SMILES and rendered as molecule images using SmilesDrawer, and Firebase Realtime Database for live messages.
+Firebase/Vercel-ready chat app for sending words as VCMC SMILES. Messages are stored as SMILES arrays, rendered as molecule images, and decoded client-side when a message is tapped.
 
-Setup
+## Features
 
-1. Create a Firebase project and enable Authentication (Google, Email/Password, Anonymous) and Realtime Database.
-2. Replace the placeholders in `app.js`'s `firebaseConfig` with your project's config values.
-3. (Optional) Create demo user in Firebase or use anonymous demo button.
+- Landing screen with beta badge and demo credentials
+- Google sign-in and email/password authentication
+- Global live chatroom
+- Private 1-on-1 rooms after contact requests are accepted
+- Messages stored as VCMC SMILES, not plaintext
+- Molecule cards rendered via PubChem first, Cactus fallback, then local SVG fallback
+- Firebase Realtime Database live updates
+- Vercel-ready Vite build
 
-Run locally
+## Local Setup
 
-Open `index.html` in a static server or deploy to Vercel.
+```bash
+npm install
+cp .env.example .env
+npm run dev
+```
 
-Vercel
+Fill `.env` with a Firebase web app config. Enable these Firebase products:
 
-This is static and ready to deploy to Vercel. Add your Firebase config to a secure place (we keep it in `app.js` for now). For production, use environment variables or server-pass-through.
+- Authentication: Email/Password and Google
+- Realtime Database
+
+## Vercel
+
+Add the same variables from `.env.example` in Vercel Project Settings > Environment Variables.
+
+Build command:
+
+```bash
+npm run build
+```
+
+Output directory:
+
+```bash
+dist
+```
+
+## Firebase Rules
+
+`database.rules.json` contains a starter ruleset for authenticated global chat, private rooms, contacts, and friend requests. Review before production use.
+
+## Demo Account
+
+Set:
+
+```env
+VITE_DEMO_EMAIL=demo@vcmc.app
+VITE_DEMO_PASSWORD=demo123456
+```
+
+Then create the same user in Firebase Authentication, or register it through the app once.
